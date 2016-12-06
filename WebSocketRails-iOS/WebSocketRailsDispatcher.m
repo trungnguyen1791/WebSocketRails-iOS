@@ -16,6 +16,7 @@
 @property (nonatomic, strong) WebSocketRailsConnection *connection;
 @property (nonatomic, strong) NSTimer *pingPongTimer;
 
+@property (nonatomic, strong) NSDictionary *pongData;
 @end
 
 @implementation WebSocketRailsDispatcher
@@ -32,6 +33,24 @@
         
         _connection = [WebSocketRailsConnection.alloc initWithUrl:url dispatcher:self];
         _connectionId = @0;
+    }
+    return self;
+}
+
+
+- (id)initWithUrl:(NSURL *)url pongData:(NSDictionary *)data
+{
+    self = [super init];
+    if (self) {
+        _url = url;
+        _state = @"connecting";
+        _channels = [NSMutableDictionary dictionary];
+        _queue = [NSMutableDictionary dictionary];
+        _callbacks = [NSMutableDictionary dictionary];
+        
+        _connection = [WebSocketRailsConnection.alloc initWithUrl:url dispatcher:self];
+        _connectionId = @0;
+        _pongData = data;
     }
     return self;
 }
@@ -139,7 +158,7 @@
     [_pingPongTimer invalidate];
     _pingPongTimer = [NSTimer timerWithTimeInterval:12 target:self selector:@selector(handlePingPongFailure) userInfo:nil repeats:NO];
     
-    WebSocketRailsEvent *pong = [WebSocketRailsEvent.alloc initWithData:@[@"websocket_rails.pong", @{}, _connectionId ? _connectionId : [NSNull null]]];
+    WebSocketRailsEvent *pong = [WebSocketRailsEvent.alloc initWithData:@[@"websocket_rails.pong", _pongData ? _pongData : @{}, _connectionId ? _connectionId : [NSNull null]]];
     [_connection trigger:pong];
 }
 
